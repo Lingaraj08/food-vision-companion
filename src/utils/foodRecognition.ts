@@ -1,4 +1,3 @@
-
 import { pipeline, env } from '@huggingface/transformers';
 
 // Configure transformers.js to ensure models download correctly
@@ -172,7 +171,7 @@ export async function recognizeFood(imageSource: string | Blob): Promise<Recogni
     console.log("Raw model predictions:", result);
     
     // Process all predictions to find food matches
-    const matches: { foodKey: string; confidence: number }[] = [];
+    const matches: { key: string; confidence: number }[] = [];
     
     // Check each prediction against our food mappings
     result.forEach((prediction: { label: string; score: number }) => {
@@ -182,7 +181,7 @@ export async function recognizeFood(imageSource: string | Blob): Promise<Recogni
         // Check if any keyword matches the prediction
         if (keywords.some(keyword => predictedClass.includes(keyword))) {
           matches.push({
-            foodKey,
+            key: foodKey,  // Changed from foodKey to key
             confidence: prediction.score
           });
           break;
@@ -194,9 +193,9 @@ export async function recognizeFood(imageSource: string | Blob): Promise<Recogni
         predictedClass.includes(food)
       );
       
-      if (directMatch && !matches.some(m => m.foodKey === directMatch)) {
+      if (directMatch && !matches.some(m => m.key === directMatch)) {
         matches.push({
-          foodKey: directMatch,
+          key: directMatch,  // Changed from foodKey to key
           confidence: prediction.score
         });
       }
@@ -208,7 +207,7 @@ export async function recognizeFood(imageSource: string | Blob): Promise<Recogni
     // If we have matches, return the best one with alternatives
     if (matches.length > 0) {
       return {
-        foodKey: matches[0].foodKey,
+        foodKey: matches[0].key,
         confidence: matches[0].confidence,
         alternativeFoods: matches.slice(1, 3) // Include up to 2 alternatives
       };
