@@ -12,4 +12,5 @@ export interface FoodItem {
   };
   imageUrl?: string;
   timestamp: string;
+  confidence?: number; // Added confidence level
 }
