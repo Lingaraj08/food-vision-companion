@@ -2,7 +2,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { FoodItem } from "@/types";
-import { Badge } from "@/components/ui/badge";
 
 interface FoodInfoCardProps {
   food: FoodItem;
@@ -16,13 +15,6 @@ export default function FoodInfoCard({ food }: FoodInfoCardProps) {
           <span>{food.name}</span>
           <span className="text-secondary font-bold">{food.calories} cal</span>
         </CardTitle>
-        {food.confidence !== undefined && (
-          <div className="flex items-center gap-2">
-            <Badge variant={food.confidence > 70 ? "default" : food.confidence > 40 ? "outline" : "secondary"}>
-              {food.confidence}% confidence
-            </Badge>
-          </div>
-        )}
       </CardHeader>
       <CardContent>
         {food.imageUrl && (

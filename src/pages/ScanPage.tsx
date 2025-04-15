@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import CameraComponent from '@/components/Camera';
 import FoodInfoCard from '@/components/FoodInfoCard';
@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { FoodItem } from '@/types';
 import { recognizeFood, getFoodInfo } from '@/utils/foodRecognition';
 import { useFoodStore } from '@/store/foodStore';
-import { toast } from '@/components/ui/sonner';
 
 export default function ScanPage() {
   const navigate = useNavigate();
@@ -17,7 +16,6 @@ export default function ScanPage() {
   const [processing, setProcessing] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [detectedFood, setDetectedFood] = useState<FoodItem | null>(null);
-  const [alternativeFoods, setAlternativeFoods] = useState<Array<{ key: string; confidence: number }>>([]);
   const addFood = useFoodStore(state => state.addFood);
 
   const handleImageCapture = async (imageData: string) => {
@@ -26,73 +24,33 @@ export default function ScanPage() {
     setProcessing(true);
 
     try {
-      // Recognize the food in the captured image with improved model
-      const recognitionResult = await recognizeFood(imageData);
+      // Recognize the food in the captured image
+      const foodKey = await recognizeFood(imageData);
+      const foodInfo = getFoodInfo(foodKey);
       
-      if (recognitionResult.foodKey === "unknown") {
-        toast.error("Could not identify food. Please try again.");
-        setDetectedFood(null);
-        setAlternativeFoods([]);
-      } else {
-        console.log("Food recognized:", recognitionResult);
-        
-        const foodInfo = getFoodInfo(recognitionResult.foodKey);
-        
-        // Create food item with recognized information
-        const foodItem: FoodItem = {
-          id: `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          name: foodInfo.name,
-          calories: foodInfo.calories,
-          nutrition: foodInfo.nutrition,
-          imageUrl: imageData,
-          timestamp: new Date().toISOString(),
-          confidence: Math.round(recognitionResult.confidence * 100)
-        };
-        
-        setDetectedFood(foodItem);
-        setAlternativeFoods(recognitionResult.alternativeFoods || []);
-        addFood(foodItem);
-        
-        // Show toast notification with confidence level
-        if (recognitionResult.confidence > 0.7) {
-          toast.success(`Identified ${foodInfo.name} with high confidence`);
-        } else if (recognitionResult.confidence > 0.5) {
-          toast(`Identified ${foodInfo.name} with medium confidence`);
-        } else {
-          toast.warning(`Identified ${foodInfo.name} with low confidence`);
-        }
-      }
+      // Create food item with recognized information
+      const foodItem: FoodItem = {
+        id: `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        name: foodInfo.name,
+        calories: foodInfo.calories,
+        nutrition: foodInfo.nutrition,
+        imageUrl: imageData,
+        timestamp: new Date().toISOString()
+      };
+      
+      setDetectedFood(foodItem);
+      addFood(foodItem);
     } catch (error) {
       console.error('Error processing food image:', error);
-      toast.error("Error processing image. Please try again.");
     } finally {
       setProcessing(false);
     }
-  };
-
-  const handleAlternativeSelect = (foodKey: string) => {
-    const foodInfo = getFoodInfo(foodKey);
-    
-    // Create food item with selected alternative
-    const foodItem: FoodItem = {
-      id: `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      name: foodInfo.name,
-      calories: foodInfo.calories,
-      nutrition: foodInfo.nutrition,
-      imageUrl: capturedImage || undefined,
-      timestamp: new Date().toISOString()
-    };
-    
-    setDetectedFood(foodItem);
-    addFood(foodItem);
-    toast.success(`Updated to ${foodInfo.name}`);
   };
 
   const handleReset = () => {
     setScanning(true);
     setCapturedImage(null);
     setDetectedFood(null);
-    setAlternativeFoods([]);
   };
 
   const handleViewHistory = () => {
@@ -122,24 +80,6 @@ export default function ScanPage() {
               ) : detectedFood ? (
                 <div className="space-y-6">
                   <FoodInfoCard food={detectedFood} />
-                  
-                  {alternativeFoods.length > 0 && (
-                    <div className="p-4 bg-muted rounded-lg">
-                      <h3 className="text-sm font-medium mb-2">Did you mean:</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {alternativeFoods.map((alt) => (
-                          <Button 
-                            key={alt.key} 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleAlternativeSelect(alt.key)}
-                          >
-                            {getFoodInfo(alt.key).name}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                   
                   <div className="flex flex-col space-y-3 w-full">
                     <Button onClick={handleReset} variant="outline">
